@@ -1,14 +1,24 @@
 import pymysql
 import logging
 from task_status import TaskStatus
+import json
 
 class TaskDBMySqlDao:
     def __init__(table):
+        with open('accounts.json') as f:
+            accounts = json.load(f)
+
+        assert accounts.get('mysql')
+        mysql = accounts.get('mysql')
+        assert mysql.get('ip')
+        assert mysql.get('password')
+        assert mysql.get('user')
+
         self.db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="lyc135790", # NOTE: Password doesn't work.
-            database="SpiderTaskQueue"
+            host = mysql.get('ip'),
+            user = mysql.get('user'),
+            password = mysql.get('password'),
+            database = "SpiderTaskQueue"
         )
         self.table = table
 
