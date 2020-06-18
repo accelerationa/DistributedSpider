@@ -9,15 +9,15 @@ class TaskDBMySqlDao:
             accounts = json.load(f)
 
         assert accounts.get('mysql')
-        mysql = accounts.get('mysql')
-        assert mysql.get('ip')
-        assert mysql.get('password')
-        assert mysql.get('user')
+        metadata = accounts.get('mysql')
+        assert metadata.get('ip')
+        assert metadata.get('password')
+        assert metadata.get('user')
 
-        self.db = mysql.connector.connect(
-            host = mysql.get('ip'),
-            user = mysql.get('user'),
-            password = mysql.get('password'),
+        self.db = pymysql.connect(
+            host = metadata.get('ip'),
+            user = metadata.get('user'),
+            password = metadata.get('password'),
             database = "SpiderTaskQueue"
         )
         self.table = table
@@ -39,7 +39,7 @@ class TaskDBMySqlDao:
             cursor.execute("UPDATE {0} SET status='{1}' WHERE url='{2}';".format(self.table, TaskStatus.downloading, task_url))
         except Error as e:
             raise Exception('Unable to findone and update {0}, error message {1}'.format(self.table, e))
-        finally
+        finally:
             # Unlock table.
             cursor.execute("UNLOCK TABLES;")
 
