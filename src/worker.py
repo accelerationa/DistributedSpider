@@ -3,8 +3,9 @@ import threading
 import time
 import random
 import uuid
-
-SPIDER_CNT_PER_NODE = 10
+from mysql_dao import TaskDBMySqlDao
+import argparse
+import sys
 
 # fetch_fake_content() generates (1 - URL_GENERATION_CNT_UPPER_BOUND) 
 # urls with probability GENERATION_PROBABILITY_NON_ZEROS;
@@ -17,50 +18,72 @@ GENERATION_PROBABILITY_NON_ZEROS = 0.1
 # Probability of generating zero urls
 GENERATION_PROBABILITY_ZEROS = 0.6
 
-def push_task_queue(task_uuids):
-    return
+class Worker:
+    # Parameters:
+    #   num_spiders: the number of spiders on this worker node, default to 1.
+    #   test_mode: generate fake contents without sleeping.
+    def __init__(self, database, table, test_mode = False, num_spiders = 1):
+        self.table = table
+        self.database = database
+        self.test_mode = test_mode
+        self.num_spiders = num_spiders
 
-def poll_task_queue(task_uuid):
-    return
+    def run(self):
+        format = "%(asctime)s: %(message)s"
+        logging.basicConfig(format=format, level=logging.INFO,
+                            datefmt="%H:%M:%S")
 
+        logging.info("WorkerNode    : started")
 
-def get_new_task():
-    return
-    # read a task that has status New from DB
-    # Mark as downloading
-    # return UUID
+        for i in range(self.num_spiders):
+            spider = threading.Thread(target=self.spider_thread, args = (i,))
+            spider.daemon = True
+            spider.start()
 
-def fetch_fake_content(test_mode = False):
-    # Only sleep in test mode
-    if not test_mode: 
-        time.sleep(1)
+        while True:
+            time.sleep(1)
 
-    random_list = []
-    for i in range(1, URL_GENERATION_CNT_UPPER_BOUND + 1):
-        random_list += [i] * int(GENERATION_PROBABILITY_NON_ZEROS * 100)
-    random_list += [0] * int(GENERATION_PROBABILITY_ZEROS * 100)
-        
-    url_len = random.choice(random_list)
-    urls = []
-    for i in range(url_len):
-        urls.append(str(uuid.uuid4()))
-    return urls
+    def spider_thread(self, name):
+        logging.info("Spider %s: started", name)
+        while True:
+            dao = TaskDBMySqlDao(self.database, self.table)
+            url = dao.findAndReturnAnUnprocessedTask()
 
-def spider_thread(name):
-    logging.info("Spider %s: startws", name)
-    while True:
-        task_uuid = get_new_task()
-        push_task_queue(fetch_fake_content())
-        poll_task_queue(task_uuid)
+            if url:
+                dao.removeTask(url)
 
+            new_urls = self.fetch_fake_content()
+            # Write new task url into database.
+            for new_url in new_urls:
+                dao.newTask(new_url)
+            
+            # Only sleep in test mode
+            if self.test_mode: 
+                time.sleep(10)
+                logging.info("Sleeping for 10 second...")
+
+    def fetch_fake_content(self):
+        random_list = []
+        for i in range(1, URL_GENERATION_CNT_UPPER_BOUND + 1):
+            random_list += [i] * int(GENERATION_PROBABILITY_NON_ZEROS * 100)
+        random_list += [0] * int(GENERATION_PROBABILITY_ZEROS * 100)
+            
+        url_len = random.choice(random_list)
+        urls = []
+        for i in range(url_len):
+            urls.append(str(uuid.uuid4()))
+        return urls
+
+def getOptions(args):
+    parser = argparse.ArgumentParser(description="Options to run a spider worker.")
+
+    parser.add_argument("-s", "--spiders", type=int, help="Number of spiders to run on a worker node. Default is 10.", default=10)
+    parser.add_argument("-t", "--table", help="Table name. Default is SpiderTaskQueue.", default='SpiderTaskQueue')
+    parser.add_argument("-d", "--database", help="Database name. Default is SpiderTaskQueue.", default='SpiderTaskQueue')
+    parser.add_argument("--test", type=bool, help="Enbales test mode. Test mode runs with local MySQL database; each spider sleeps 10 seconds after each run. Default is False.", default=False)
+    options = parser.parse_args(args)
+    return options
 
 if __name__ == "__main__":
-    format = "%(asctime)s: %(message)s"
-    logging.basicConfig(format=format, level=logging.INFO,
-                        datefmt="%H:%M:%S")
-
-    logging.info("WorkerNode    : started")
-
-    for i in range(SPIDER_CNT_PER_NODE):
-        spider = threading.Thread(target=spider_thread, args=(i,))
-        spider.start()
+    options = getOptions(sys.argv[1:])
+    Worker(database=options.database, table=options.table, test_mode=options.test, num_spiders=options.spiders).run()

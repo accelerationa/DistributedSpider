@@ -2,66 +2,58 @@ import pymysql
 import logging
 from task_status import TaskStatus
 import json
+import time
+from init_mysql_connector_cursor import init_mysql_connector_and_cursor
 
-# Call this function to initialize connector in every public method
-def init_connector():
-    with open('accounts.json') as f:
-        accounts = json.load(f)
-
-    assert accounts.get('mysql')
-    metadata = accounts.get('mysql')
-    assert metadata.get('ip')
-    assert metadata.get('password')
-    assert metadata.get('user')
-
-    conn = pymysql.connect(
-        host = metadata.get('ip'),
-        user = metadata.get('user'),
-        password = metadata.get('password'),
-    )
-    return conn
+def log_and_execute(cursor, query):
+        print(query)
+        cursor.execute(query)
 
 class TaskDBMySqlDao:
-    def __init__(self, database, table):
+    def __init__(self, database, table, use_local_database = False):
         self.table = table
         self.database = database
+        self.use_local_database = use_local_database
 
-    # Call this function to initialize connector in every public method
-
+    # Returns task URL. Returns None if there's no unprocessed task.
     def findAndReturnAnUnprocessedTask(self):
-        conn = init_connector()
-        cursor = conn.cursor()
+        conn, cursor = init_mysql_connector_and_cursor(use_local_database=self.use_local_database)
 
         try:
-            cursor.execute("USE {};".format(self.database))
-            print("{} selected.".format(self.database))
+            log_and_execute(cursor, "USE {};".format(self.database))
 
             # Lock table.
-            print("Locking table...\n")
-            cursor.execute("LOCK TABLES {} WRITE".format(self.table))
-            print("Table locked.\n")
+            log_and_execute(cursor, "LOCK TABLES {} WRITE".format(self.table))
+            print("Table locked.")
 
-        except Error as e: 
+        except Exception as e: 
             raise Exception('Unable to lock table {}, error message {}'.format(self.table, e))
 
         try: 
             # Get one unprocessed entry.    
-            cursor.execute("SELECT * FROM {} WHERE status='{}' LIMIT 1;".format(self.table, TaskStatus.new.name))
-            print("Entry fetched from table.\n")
-            task_url = cursor.fetchone()[0]
-            print("Task url is: {}.\n".format(task_url))
+            log_and_execute(cursor, "SELECT * FROM {} WHERE status='{}' LIMIT 1;".format(self.table, TaskStatus.new.name))
+            print("Entry fetched from table.")
+
+            task = cursor.fetchone()
+            if not task or not task[0]:
+                print("Empty Entry...")
+                # After returning from try, it automatucally goes to finally block.
+                return None
+
+            task_url = task[0]
+            print("Task url is: {}.".format(task_url))
 
             # Update entry status.        
-            cursor.execute("UPDATE {} SET status='{}' WHERE url='{}';".format(self.table, TaskStatus.downloading.name, task_url))
+            log_and_execute(cursor, "UPDATE {} SET status='{}' WHERE url='{}';".format(self.table, TaskStatus.downloading.name, task_url))
+            
             conn.commit()
-            print("Updated task status to Downloading.\n")
+            print("Updated task status to Downloading.")
         except Exception as e:
             raise Exception('Unable to find one and update {}. Error message: {}'.format(self.table, e))
         finally:
             # Unlock table.
-            print("Unlocking table...\n")
-            cursor.execute("UNLOCK TABLES;\n")
-            print("Table unlocked.\n")
+            log_and_execute(cursor, "UNLOCK TABLES;")
+            print("Table unlocked.")
 
             # Clean up
             cursor.close()
@@ -70,21 +62,34 @@ class TaskDBMySqlDao:
         return task_url
 
     def removeTask(self, task_url):
-        conn = init_connector()
-        cursor = conn.cursor()
+        conn, cursor = init_mysql_connector_and_cursor(use_local_database=self.use_local_database)
 
         try:
-            cursor.execute("USE {};".format(self.database))
-            print("{} selected.".format(self.database))
+            log_and_execute(cursor, "USE {};".format(self.database))
 
             # Remove entry.
-            cursor.execute("DELETE FROM {} WHERE url='{}';".format(self.table, task_url))
-            print("DELETE FROM {} WHERE url='{}';".format(self.table, task_url))
-
+            log_and_execute(cursor, "DELETE FROM {} WHERE url='{}';".format(self.table, task_url))
             conn.commit()
             print("Entry with url {} removed.".format(task_url))
         except Exception as e:
-            raise Exception('Unable to remove database {}. Error message: {}'.format(self.database, e))
+            raise Exception('Unable to remove {}. Error message: {}'.format(url, e))
+        finally:
+            # Clean up
+            cursor.close()
+            conn.close()
+
+    def newTask(self, url):
+        conn, cursor = init_mysql_connector_and_cursor(use_local_database=self.use_local_database)
+
+        try:
+            log_and_execute(cursor, "USE {};".format(self.database))
+            log_and_execute(cursor, "INSERT INTO {} (url, status, createdOn) VALUES ('{}', 'New', {});".format(self.table, url, time.time()))
+            conn.commit()
+
+            print("Entry with url {} inserted.".format(url))
+
+        except Exception as e:
+            raise Exception('Unable to insert database {}. Error message: {}'.format(self.database, e))
         finally:
             # Clean up
             cursor.close()
