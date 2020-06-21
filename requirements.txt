@@ -2,3 +2,5 @@ nose
 sphinx
 pymysql
 simplejson
+requests
+boto3

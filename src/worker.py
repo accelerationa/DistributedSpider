@@ -6,6 +6,7 @@ import uuid
 from mysql_dao import TaskDBMySqlDao
 import argparse
 import sys
+from cloudwatch_agent import CloudWatchAgent
 
 # fetch_fake_content() generates (1 - URL_GENERATION_CNT_UPPER_BOUND) 
 # urls with probability GENERATION_PROBABILITY_NON_ZEROS;
@@ -45,7 +46,11 @@ class Worker:
 
     def spider_thread(self, name):
         logging.info("Spider %s: started", name)
+        cw = CloudWatchAgent()
+
         while True:
+            start = time.time()
+
             dao = TaskDBMySqlDao(self.database, self.table)
             url = dao.findAndReturnAnUnprocessedTask()
 
@@ -61,6 +66,7 @@ class Worker:
             if self.test_mode: 
                 time.sleep(10)
                 logging.info("Sleeping for 10 second...")
+                cw.put_latency_metrics(latency=time.time() - start, worker_ip=requests.get('http://169.254.169.254/latest/meta-data/public-ipv4').content, spider_name=name) 
 
     def fetch_fake_content(self):
         random_list = []
