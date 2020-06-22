@@ -66,7 +66,7 @@ class Worker:
             if self.test_mode: 
                 time.sleep(10)
                 logging.info("Sleeping for 10 second...")
-                cw.put_latency_metrics(latency=time.time() - start, worker_ip=requests.get('http://169.254.169.254/latest/meta-data/public-ipv4').content, spider_name=name) 
+            cw.put_latency_metrics(latency=time.time() - start, worker_ip=requests.get('http://169.254.169.254/latest/meta-data/public-ipv4').content, spider_name=name) 
 
     def fetch_fake_content(self):
         random_list = []
