@@ -9,6 +9,9 @@ accounts.json
 # C extensions
 *.so
 
+# log
+*.out
+
 .DS_Store
 
 # Distribution / packaging

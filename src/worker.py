@@ -24,11 +24,12 @@ class Worker:
     # Parameters:
     #   num_spiders: the number of spiders on this worker node, default to 1.
     #   test_mode: generate fake contents without sleeping.
-    def __init__(self, database, table, test_mode = False, num_spiders = 1):
+    def __init__(self, database, table, test_mode = False, num_spiders = 1, spider_name):
         self.table = table
         self.database = database
         self.test_mode = test_mode
         self.num_spiders = num_spiders
+        self.spider_name = spider_name
 
     def run(self):
         format = "%(asctime)s: %(message)s"
@@ -38,7 +39,7 @@ class Worker:
         logging.info("WorkerNode    : started")
 
         for i in range(self.num_spiders):
-            spider = threading.Thread(target=self.spider_thread, args = (i,))
+            spider = threading.Thread(target=self.spider_thread, args = (spider_name + str(i),))
             spider.daemon = True
             spider.start()
 
@@ -84,13 +85,15 @@ class Worker:
 def getOptions(args):
     parser = argparse.ArgumentParser(description="Options to run a spider worker.")
 
-    parser.add_argument("-s", "--spiders", type=int, help="Number of spiders to run on a worker node. Default is 10.", default=10)
+    # Defaults to 1 because CloudWatch client is not thread safe.
+    parser.add_argument("-s", "--spiders", type=int, help="Number of spiders to run on a worker node. Default is 1.", default=1)
     parser.add_argument("-t", "--table", help="Table name. Default is SpiderTaskQueue.", default='SpiderTaskQueue')
     parser.add_argument("-d", "--database", help="Database name. Default is SpiderTaskQueue.", default='SpiderTaskQueue')
+    parser.add_argument("-n", "--name", help="Spider name. Default is spider.", default='spider')
     parser.add_argument("--test", type=bool, help="Enbales test mode. Test mode runs with local MySQL database; each spider sleeps 10 seconds after each run. Default is False.", default=False)
     options = parser.parse_args(args)
     return options
 
 if __name__ == "__main__":
     options = getOptions(sys.argv[1:])
-    Worker(database=options.database, table=options.table, test_mode=options.test, num_spiders=options.spiders).run()
+    Worker(database=options.database, table=options.table, test_mode=options.test, num_spiders=options.spiders, spider_name=options.name).run()

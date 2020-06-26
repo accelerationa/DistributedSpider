@@ -37,4 +37,9 @@ fi
 cat >> accounts.json << EOF
 {"mysql": {"ip": "54.70.196.132", "password": "Lyc135790!", "user": "spider"}}
 EOF
-nohup python ./src/worker.py --spiders 1 > spider1.out&
+
+BASE_NAME=singlenodesingleprocess
+for PROCESS in {1..1} 
+do 
+nohup python ./src/worker.py --name $BASE_NAME$PROCESS > spider$PROCESS.out&
+done
