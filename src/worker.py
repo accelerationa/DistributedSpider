@@ -24,7 +24,7 @@ class Worker:
     # Parameters:
     #   num_spiders: the number of spiders on this worker node, default to 1.
     #   test_mode: generate fake contents without sleeping.
-    def __init__(self, database, table, test_mode = False, num_spiders = 1, spider_name):
+    def __init__(self, database, table, spider_name, test_mode = False, num_spiders = 1):
         self.table = table
         self.database = database
         self.test_mode = test_mode
@@ -39,7 +39,7 @@ class Worker:
         logging.info("WorkerNode    : started")
 
         for i in range(self.num_spiders):
-            spider = threading.Thread(target=self.spider_thread, args = (spider_name + str(i),))
+            spider = threading.Thread(target=self.spider_thread, args = (self.spider_name + str(i),))
             spider.daemon = True
             spider.start()
 
