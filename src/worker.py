@@ -7,6 +7,7 @@ from mysql_dao import TaskDBMySqlDao
 import argparse
 import sys
 from cloudwatch_agent import CloudWatchAgent
+import requests
 
 # fetch_fake_content() generates (1 - URL_GENERATION_CNT_UPPER_BOUND) 
 # urls with probability GENERATION_PROBABILITY_NON_ZEROS;
