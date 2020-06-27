@@ -6,7 +6,7 @@ class WorkerTest(unittest.TestCase):
     def test_fetch_fake_content_uuid_generation(self):
         iterations = 10000
 
-        worker = Worker("Dummy", "Dummuy", test_mode = True)
+        worker = Worker("Dummy", "Dummuy", spider_name="test_spider", test_mode = True)
         cnt = 0
         for i in range(iterations):
             cnt += len(worker.fetch_fake_content())

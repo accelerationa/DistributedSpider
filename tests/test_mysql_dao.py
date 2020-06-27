@@ -23,7 +23,7 @@ class MysqlDaoTestNoMock(unittest.TestCase):
         cursor.execute("INSERT INTO {} (url, status, createdOn) VALUES ('url1', 'New', 1);".format(self.table))
         conn.commit()
 
-        self.dao = TaskDBMySqlDao(self.database, self.table)
+        self.dao = TaskDBMySqlDao(self.database, self.table, use_local_database = True)
         
         cursor.close()
         conn.close()

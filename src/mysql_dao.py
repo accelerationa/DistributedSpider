@@ -18,7 +18,6 @@ class TaskDBMySqlDao:
     # Returns task URL. Returns None if there's no unprocessed task.
     def findAndReturnAnUnprocessedTask(self):
         conn, cursor = init_mysql_connector_and_cursor(use_local_database=self.use_local_database)
-
         try:
             log_and_execute(cursor, "USE {};".format(self.database))
 
