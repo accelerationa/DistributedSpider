@@ -21,19 +21,13 @@ class TaskDBMySqlDao:
         try:
             log_and_execute(cursor, "USE {};".format(self.database))
 
-            # Lock table.
-            log_and_execute(cursor, "LOCK TABLES {} WRITE".format(self.table))
-            print("Table locked.")
-
-        except Exception as e: 
-            raise Exception('Unable to lock table {}, error message {}'.format(self.table, e))
-
-        try: 
-            # Get one unprocessed entry.    
-            log_and_execute(cursor, "SELECT * FROM {} WHERE status='{}' LIMIT 1;".format(self.table, TaskStatus.new.name))
-            print("Entry fetched from table.")
-
+            # Get one unprocessed entry and update to downloading. 
+            log_and_execute(cursor, "UPDATE {} SET status='{}', url = (SELECT @update_url := url) WHERE status='{}' LIMIT 1;".format(self.table, TaskStatus.downloading.value, TaskStatus.new.value))
+            log_and_execute(cursor, "SELECT @update_url;")
             task = cursor.fetchone()
+            conn.commit()
+
+            print("Entry fetched from table.")
             if not task or not task[0]:
                 print("Empty Entry...")
                 # After returning from try, it automatucally goes to finally block.
@@ -42,18 +36,9 @@ class TaskDBMySqlDao:
             task_url = task[0]
             print("Task url is: {}.".format(task_url))
 
-            # Update entry status.        
-            log_and_execute(cursor, "UPDATE {} SET status='{}' WHERE url='{}';".format(self.table, TaskStatus.downloading.name, task_url))
-            
-            conn.commit()
-            print("Updated task status to Downloading.")
         except Exception as e:
             raise Exception('Unable to find one and update {}. Error message: {}'.format(self.table, e))
         finally:
-            # Unlock table.
-            log_and_execute(cursor, "UNLOCK TABLES;")
-            print("Table unlocked.")
-
             # Clean up
             cursor.close()
             conn.close()
