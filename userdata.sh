@@ -1,6 +1,3 @@
-#### This file is for EC2 launch automation, copy contents in this file (EXCEPT this comment)
-#### to EC2 user data.
-
 Content-Type: multipart/mixed; boundary="//"
 MIME-Version: 1.0
 
@@ -21,13 +18,14 @@ Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment; filename="userdata.txt"
 
 #!/bin/bash
-sudo rm  /var/log/user-data.log
+set -e
 exec > >(sudo tee /var/log/user-data.log|sudo logger -t user-data -s 2>/dev/console) 2>&1
+cd /home/ubuntu
 
 if [ -d "DistributedSpider" ]; then
     rm -rf DistributedSpider
 fi
-git clone https://github.com/accelerationa/DistributedSpider
+git clone https://github.com/accelerationa/DistributedSpider.git
 cd ./DistributedSpider
 make
 FILE=accounts.json
@@ -38,8 +36,9 @@ cat >> accounts.json << EOF
 {"mysql": {"ip": "54.70.196.132", "password": "Lyc135790!", "user": "spider"}}
 EOF
 
-BASE_NAME=singlenodesingleprocess
-for PROCESS in {1..1} 
+BASE_NAME=4node10processrowlock
+for PROCESS in {1..10} 
 do 
 nohup python ./src/worker.py --name $BASE_NAME$PROCESS > spider$PROCESS.out&
 done
+--//

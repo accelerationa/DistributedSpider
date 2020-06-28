@@ -24,12 +24,13 @@ class Worker:
     # Parameters:
     #   num_spiders: the number of spiders on this worker node, default to 1.
     #   test_mode: generate fake contents without sleeping.
-    def __init__(self, database, table, spider_name, test_mode = False, num_spiders = 1):
+    def __init__(self, database, table, spider_name, metrics_sample_mods, test_mode = False, num_spiders = 1):
         self.table = table
         self.database = database
         self.test_mode = test_mode
         self.num_spiders = num_spiders
         self.spider_name = spider_name
+        self.metrics_sample_mods = metrics_sample_mods
 
     def run(self):
         format = "%(asctime)s: %(message)s"
@@ -43,8 +44,7 @@ class Worker:
             spider.daemon = True
             spider.start()
 
-        while True:
-            time.sleep(1)
+        spider.join()
 
     def spider_thread(self, name):
         logging.info("Spider %s: started", name)
@@ -68,7 +68,7 @@ class Worker:
             if self.test_mode: 
                 time.sleep(10)
                 logging.info("Sleeping for 10 second...")
-            cw.put_latency_metrics(latency=time.time() - start, worker_ip=requests.get('http://169.254.169.254/latest/meta-data/public-ipv4').content, spider_name=name) 
+            cw.put_latency_metrics(latency=time.time() - start, worker_ip=requests.get('http://169.254.169.254/latest/meta-data/public-ipv4').content, spider_name=name, metrics_sample_mods=self.metrics_sample_mods) 
 
     def fetch_fake_content(self):
         random_list = []
@@ -91,9 +91,10 @@ def getOptions(args):
     parser.add_argument("-d", "--database", help="Database name. Default is SpiderTaskQueue.", default='SpiderTaskQueue')
     parser.add_argument("-n", "--name", help="Spider name. Default is spider.", default='spider')
     parser.add_argument("--test", type=bool, help="Enbales test mode. Test mode runs with local MySQL database; each spider sleeps 10 seconds after each run. Default is False.", default=False)
+    parser.add_argument("-m", "--metrics_sample_mods", type=int, help="The number by which CW put metrics fequency is divided by. Defaults to 10", default=10)
     options = parser.parse_args(args)
     return options
 
 if __name__ == "__main__":
     options = getOptions(sys.argv[1:])
-    Worker(database=options.database, table=options.table, test_mode=options.test, num_spiders=options.spiders, spider_name=options.name).run()
+    Worker(database=options.database, table=options.table, test_mode=options.test, num_spiders=options.spiders, spider_name=options.name, metrics_sample_mods=options.metrics_sample_mods).run()
