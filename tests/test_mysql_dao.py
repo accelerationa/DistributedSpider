@@ -61,3 +61,4 @@ class MysqlDaoTestNoMock(unittest.TestCase):
         
         # cursor.close()
         # conn.close()
+        assert True

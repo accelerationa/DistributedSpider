@@ -16,7 +16,7 @@ class TaskDBMongoDao:
                 { "status" : TaskStatus.new.value },
                 { "$set": { "status" : TaskStatus.downloading.value}})
         except Exception as e:
-            print("Failed to find one and update. Error message: {}." e)
+            print("Failed to find one and update. Error message: {}.", e)
 
         if not task: 
             print("Empty Entry...")
