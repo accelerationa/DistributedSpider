@@ -22,7 +22,7 @@ class TaskDBMongoDao:
             print("Empty Entry...")
             return None
         task_url = task['url']
-            print("Task url is: {}.".format(task_url))
+        print("Task url is: {}.".format(task_url))
         return task_url
 
     def removeTask(self, task_url):

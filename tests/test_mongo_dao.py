@@ -8,15 +8,18 @@ import pymongo
 class MongoDaoTestNoMock(unittest.TestCase):
     @classmethod
     def setUpClass(self):
+        database_name = 'MongoDaoTestNoMockDatabase'
+        collection_name = 'MongoDaoTestNoMockCollection'
+
         # Create database and collection.
         self.client = init_mongo_client(use_local_database=True)
-        self.database = self.client["MongoDaoTestNoMockDatabase"]
-        self.collection = self.database["MongoDaoTestNoMockCollection"]
+        self.database = self.client[database_name]
+        self.collection = self.database[collection_name]
 
         self.collection.insert_one({'url': 'url1', 'status': TaskStatus.New.value, 'createOn': str(time.time())})
         
         # Init dao
-        self.dao = TaskDBMongoDao(use_local_database = True)
+        self.dao = TaskDBMongoDao(database_name=database_name, collection_name=collection_name, use_local_database = True)
 
     @classmethod
     def tearDownClass(self):
