@@ -9,7 +9,7 @@ def log_and_execute(cursor, query):
         print(query)
         cursor.execute(query)
 
-class TaskDBMySqlDao:
+class TaskDBMySqlDao(TaskDaoInterface):
     def __init__(self, database, table, use_local_database = False):
         self.table = table
         self.database = database

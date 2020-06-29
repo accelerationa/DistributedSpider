@@ -4,3 +4,4 @@ pymysql
 simplejson
 requests
 boto3
+pymongo 
