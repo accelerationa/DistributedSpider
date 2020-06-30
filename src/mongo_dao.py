@@ -2,6 +2,7 @@ import logging
 from task_status import TaskStatus
 import time
 import pymongo
+from init_mongo_client import init_mongo_client
 
 class TaskDBMongoDao:
     def __init__(self, database_name, collection_name, use_local_database = False):
