@@ -14,13 +14,12 @@ def what_env():
     # Local mac book
     if platform.system() != 'Linux':
         return 'Local'
-    
     # Mongo DB node on AWS
-    if requests.get('http://169.254.169.254/latest/meta-data/public-ipv4') == '34.211.21.127':
+    if requests.get('http://169.254.169.254/latest/meta-data/public-ipv4').content == '34.211.21.127':
         return 'Mongo'
 
     # MySQL node on AWS
-    if requests.get('http://169.254.169.254/latest/meta-data/public-ipv4') == '54.70.196.132':
+    if requests.get('http://169.254.169.254/latest/meta-data/public-ipv4').content == '54.70.196.132':
         return 'MySQL'
 
     return None
