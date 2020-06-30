@@ -12,12 +12,9 @@ class TaskDBMongoDao:
 
     # Returns task URL. Returns None if there's no unprocessed task.
     def findAndReturnAnUnprocessedTask(self):
-        try:
-            task = self.collection.find_one_and_update(
+        task = self.collection.find_one_and_update(
                 { "status" : TaskStatus.new.value },
                 { "$set": { "status" : TaskStatus.downloading.value}})
-        except Exception as e:
-            print("Failed to find one and update. Error message: {}.", e)
 
         if not task: 
             print("Empty Entry...")
