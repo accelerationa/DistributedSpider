@@ -5,10 +5,15 @@ import uuid
 import time
 import pymongo
 from init_mongo_client import init_mongo_client
+from test_utils import what_env
 
 class MongoDaoTestNoMock(unittest.TestCase):
     @classmethod
     def setUpClass(self):
+        self.skip = (what_env() != 'Mongo')
+        if self.skip:
+            return 
+
         self.database_name = 'MongoDaoTestNoMockDatabase'
         collection_name = 'MongoDaoTestNoMockCollection'
 
@@ -23,8 +28,11 @@ class MongoDaoTestNoMock(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
+        if self.skip:
+            return 
         self.client.drop_database(self.database_name)
 
+    @unittest.skipIf(what_env() != 'Mongo', "MongoDB not installed on this node.")
     def test_findAndReturnAnUnprocessedTask_removeTask(self):
         url = self.dao.findAndReturnAnUnprocessedTask()
         print(url)
@@ -33,6 +41,7 @@ class MongoDaoTestNoMock(unittest.TestCase):
         self.dao.removeTask(url)
         assert not self.collection.find_one()
 
+    @unittest.skipIf(what_env() != 'Mongo', "MongoDB not installed on this node.")
     def test_newTask(self):
         url = str(uuid.uuid4())
         self.dao.newTask(url)
