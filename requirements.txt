@@ -5,3 +5,4 @@ simplejson
 requests
 boto3
 pymongo 
+dnspython
