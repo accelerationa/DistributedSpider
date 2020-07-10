@@ -1,8 +1,9 @@
 import pymysql
 import json
+from database_enum import DatabaseStack
 
-def init_mysql_connector_and_cursor(use_local_database = False):
-    if use_local_database:
+def init_mysql_connector_and_cursor(stack):
+    if stack == DatabaseStack.Local:
         conn = pymysql.connect(
             host = '127.0.0.1',
             user = 'local-test',

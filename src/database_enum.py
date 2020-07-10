@@ -1,5 +1,10 @@
 import enum
   
 class Database(enum.Enum):
-    MySQL = 'MySQL'
-    Mongo = 'Mongo'
+    MySQL = 'mysql'
+    Mongo = 'mongo'
+
+class DatabaseStack(enum.Enum):
+    Local = 'local'
+    Atlas = 'atlas'
+    Aws = 'aws'

@@ -5,6 +5,8 @@ import random
 import uuid
 from mysql_dao import TaskDBMySqlDao
 from mongo_dao import TaskDBMongoDao
+from database_enum import Database
+from database_enum import DatabaseStack
 import argparse
 import sys
 from cloudwatch_agent import CloudWatchAgent
@@ -26,20 +28,15 @@ class Worker:
     # Parameters:
     #   num_spiders: the number of spiders on this worker node, default to 1.
     #   test_mode: generate fake contents without sleeping.
-    def __init__(self, database, table, spider_name, metrics_sample_mods, db_type, test_mode = False, num_spiders = 1):
+    def __init__(self, database, table, spider_name, metrics_sample_mods, db_type, db_stack, test_mode = False, num_spiders = 1):
         self.table = table
         self.database = database
         self.test_mode = test_mode
         self.num_spiders = num_spiders
         self.spider_name = spider_name
         self.metrics_sample_mods = metrics_sample_mods
-
-        if db_type == 'mongo':
-            self.db = Database.Mongo
-        elif db_type == 'mysql':
-            self.db = Database.MySQL
-        else:
-            raise Exception('Unknow database type: {}'.format(db_type))
+        self.db_stack = db_stack
+        self.db_type = db_type
 
     def run(self):
         format = "%(asctime)s: %(message)s"
@@ -61,10 +58,10 @@ class Worker:
 
         while True:
             start = time.time()
-            if self.db == Database.Mongo:
-                dao = TaskDBMongoDao(self.database, self.table)
+            if self.db_type == Database.Mongo:
+                dao = TaskDBMongoDao(self.database, self.table, self.db_stack)
             else:
-                dao = TaskDBMySqlDao(self.database, self.table)
+                dao = TaskDBMySqlDao(self.database, self.table, self.db_stack)
             url = dao.findAndReturnAnUnprocessedTask()
 
             if url:
@@ -103,10 +100,17 @@ def getOptions(args):
     parser.add_argument("-n", "--name", help="Spider name. Default is spider.", default='spider')
     parser.add_argument("--test", type=bool, help="Enbales test mode. Test mode runs with local MySQL database; each spider sleeps 10 seconds after each run. Default is False.", default=False)
     parser.add_argument("-m", "--metrics_sample_mods", type=int, help="The number by which CW put metrics fequency is divided by. Defaults to 10", default=10)
-    parser.add_argument("-b", "--db_type", type=str, help="Which database type to use as a task queue. Options are (mysql, mongo). Defaults to mongo.", default='mongo')
+    parser.add_argument("-b", "--db_type", type=Database, 
+        help="Which database type to use as a task queue. Options are (mysql, mongo). Defaults to mongo.", 
+        default=Database.Mongo, choices=list(Database))
+    parser.add_argument("--db_stack", type=DatabaseStack,
+        help="Choose database stack. Currently, MongoDB supports (local, aws, atlas); MySQL supports (local, aws). Defaults to local.", 
+        default=DatabaseStack.Local, choices=list(DatabaseStack))
     options = parser.parse_args(args)
     return options
 
 if __name__ == "__main__":
     options = getOptions(sys.argv[1:])
-    Worker(database=options.database, table=options.table, test_mode=options.test, num_spiders=options.spiders, spider_name=options.name, metrics_sample_mods=options.metrics_sample_mods, db_type=options.db_type).run()
+    Worker(database=options.database, table=options.table,
+        num_spiders=options.spiders, spider_name=options.name, metrics_sample_mods=options.metrics_sample_mods, 
+        db_type=options.db_type, db_stack=options.db_stack).run()

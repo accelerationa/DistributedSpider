@@ -5,8 +5,8 @@ import pymongo
 from init_mongo_client import init_mongo_client
 
 class TaskDBMongoDao:
-    def __init__(self, database_name, collection_name, use_local_database = False):
-        self.client = init_mongo_client(use_local_database=use_local_database)
+    def __init__(self, database_name, collection_name, stack):
+        self.client = init_mongo_client(stack=stack)
         self.database = self.client[database_name]
         self.collection = self.database[collection_name]
 

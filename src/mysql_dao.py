@@ -10,14 +10,14 @@ def log_and_execute(cursor, query):
         cursor.execute(query)
 
 class TaskDBMySqlDao:
-    def __init__(self, database, table, use_local_database = False):
+    def __init__(self, database, table, stack):
         self.table = table
         self.database = database
-        self.use_local_database = use_local_database
+        self.stack = stack
 
     # Returns task URL. Returns None if there's no unprocessed task.
     def findAndReturnAnUnprocessedTask(self):
-        conn, cursor = init_mysql_connector_and_cursor(use_local_database=self.use_local_database)
+        conn, cursor = init_mysql_connector_and_cursor(stack=self.stack)
         try:
             log_and_execute(cursor, "USE {};".format(self.database))
 
@@ -46,7 +46,7 @@ class TaskDBMySqlDao:
         return task_url
 
     def removeTask(self, task_url):
-        conn, cursor = init_mysql_connector_and_cursor(use_local_database=self.use_local_database)
+        conn, cursor = init_mysql_connector_and_cursor(stack=self.stack)
 
         try:
             log_and_execute(cursor, "USE {};".format(self.database))
@@ -63,7 +63,7 @@ class TaskDBMySqlDao:
             conn.close()
 
     def newTask(self, url):
-        conn, cursor = init_mysql_connector_and_cursor(use_local_database=self.use_local_database)
+        conn, cursor = init_mysql_connector_and_cursor(stack=self.stack)
 
         try:
             log_and_execute(cursor, "USE {};".format(self.database))
