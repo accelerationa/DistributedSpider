@@ -8,4 +8,4 @@ def init_mongo_client(stack):
         mongodb_node_ip = '34.211.21.127'
         return pymongo.MongoClient("mongodb://{}:27017/".format(mongodb_node_ip))
     else: 
-        return pymongo.MongoClient("mongodb+srv://accelerationa:Lyc135790!@cluster0.qclg8.mongodb.net/?retryWrites=true&w=majority")
+        return pymongo.MongoClient("mongodb+srv://accelerationa:<password>@cluster0.qclg8.mongodb.net/?retryWrites=true&w=majority")
